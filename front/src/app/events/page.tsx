@@ -4,80 +4,106 @@
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import {
+  AwaitedReactNode,
+  JSXElementConstructor,
+  Key,
+  ReactElement,
+  ReactNode,
+  ReactPortal,
+  useEffect,
+  useState,
+} from "react";
 import { NavBar } from "../../../components/NavBar";
 import { useProfile } from "../../../utils/useProfile";
 import { useQuery } from "@apollo/client";
-import { GET_EVENTS } from "../../../graphql/auth.graphql";
+import { GET_EVENTS } from "../../../graphql/events.graphql";
+import Cookies from "js-cookie";
+import moment from "moment";
+//import { client } from "../../../apolloClient";
 
 type attributes = {
   name: string;
+  description: string;
+  date: string;
+  time: string;
+  duration: number;
+  limit: number;
+  address: string;
+  image: {
+    data: {
+      attributes: {
+        url: string;
+      };
+    };
+  };
 };
-type article = {
+type event = {
   id: number;
   attributes: attributes;
 };
 
 export default function Events() {
-  const [articles, setArticles] = useState<article[]>([]);
-  const [error, setError] = useState<unknown>();
-  //const storage = localStorage.getItem("tokenStrapi") || "";
-
   const { user, role } = useProfile();
-  //const [token, setToken] = useState<string>(storage);
+  const { loading, data: getEventsData } = useQuery(GET_EVENTS);
+  const allEvents = getEventsData?.events?.data;
 
-  //console.log(user);
-  //console.log(role);
+  const convertMinutesToHoursMinutes = (minutes: number) => {
+    // Calculer le nombre d'heures entières
+    var hours = Math.floor(minutes / 60);
 
-  const [token, setToken] = useState("");
+    // Calculer le nombre de minutes restantes
+    var remainingMinutes = minutes % 60;
 
-  useEffect(() => {
-    const storage = localStorage.getItem("tokenStrapi") || "";
-    setToken(storage);
-  }, []);
-
-  const { data: getEventsData } = useQuery(GET_EVENTS);
-  console.log(getEventsData?.data);
-
-  useEffect(() => {
-    if (token) {
-      const getAllEvents = async () => {
-        try {
-          const request = await axios.get("http://localhost:1337/api/events", {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          //console.log("request", request);
-
-          setArticles(request.data.data);
-        } catch (error) {
-          setError(error);
-          console.log(error);
-        }
-      };
-
-      getAllEvents();
+    // Retourner le résultat sous forme de chaîne de caractères
+    if (hours === 0) {
+      return remainingMinutes + "min";
+    } else {
+      return hours + "h" + remainingMinutes;
     }
-  }, [token]);
+  };
 
   return (
     <div className="">
       <NavBar role={role} />
-      <div>LISTE DES EVENTS</div>
-
-      <ul>
-        {articles?.length > 0 &&
-          articles?.map((article) => {
+      <div className="w-full my-6 text-center">Instants sonores</div>
+      <div className="flex flex-wrap ">
+        {allEvents?.length > 0 &&
+          allEvents?.map((event: event) => {
             return (
-              <li key={article.id}>
-                <Link href={`/article/${article.id}`}>
-                  {article.attributes.name}
-                </Link>
-              </li>
+              <div key={event.id} className="w-1/4 p-2">
+                <div className="border border-red-200 shadow-lg rounded-lg">
+                  <div>
+                    <img
+                      src={`http://localhost:1337${event.attributes.image.data.attributes.url}`}
+                      alt=""
+                      className="rounded-t-lg"
+                    />
+                  </div>
+                  <div className="p-3">
+                    <div>
+                      <Link href={`/event/${event.id}`}>
+                        {event.attributes.name}
+                      </Link>
+                    </div>
+                    <div className="truncate">
+                      {event.attributes.description}
+                    </div>
+                    <div>
+                      {moment(event.attributes.date).format("DD/MM/YYYY")}
+                    </div>
+                    <div>{event.attributes.time.slice(0, 5)}</div>
+                    <div>
+                      {convertMinutesToHoursMinutes(event.attributes.duration)}
+                    </div>
+                    <div>{event.attributes.address}</div>
+                    <div>Nbre de places : {event.attributes.limit}</div>
+                  </div>
+                </div>
+              </div>
             );
           })}
-      </ul>
+      </div>
     </div>
   );
 }

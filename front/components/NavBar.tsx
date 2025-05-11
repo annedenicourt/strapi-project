@@ -18,22 +18,29 @@ export const NavBar: React.FC<NavBarProps> = ({ role = null }) => {
       >
         Accueil
       </Link>
-
       {/* <Link
-        className={`mx-3 ${
-          pathname === "/articles" ? "font-bold underline" : ""
-        }`}
-        href="/articles"
-      >
-        Articles
-      </Link> */}
-      <Link
         className={`mx-3 ${
           pathname === "/events" ? "font-bold underline" : ""
         }`}
         href="/events"
       >
         Events
+      </Link> */}
+      <Link
+        className={`mx-3 ${
+          pathname === "/plants" ? "font-bold underline" : ""
+        }`}
+        href="/plants"
+      >
+        Catalogue
+      </Link>
+      <Link
+        className={`mx-3 ${
+          pathname === "/favoris" ? "font-bold underline" : ""
+        }`}
+        href="/favoris"
+      >
+        Mes favoris
       </Link>
       {role === "administrator" && (
         <Link

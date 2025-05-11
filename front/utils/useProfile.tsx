@@ -1,6 +1,7 @@
 import axios from "axios";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 type User = {
   id: number;
@@ -11,15 +12,12 @@ type User = {
 
 export const useProfile = () => {
   const [user, setUser] = useState<User>();
-  //const storage = localStorage.getItem("tokenStrapi") || "";
-  //const [token, setToken] = useState<string>(storage);
   const [token, setToken] = useState("");
+  const accessToken = Cookies.get("tokenStrapi");
 
   useEffect(() => {
-    const storage = localStorage.getItem("tokenStrapi") || "";
-    console.log(storage);
-    if (storage) {
-      setToken(storage);
+    if (accessToken) {
+      setToken(accessToken);
     }
   }, []);
 
@@ -33,23 +31,20 @@ export const useProfile = () => {
               headers: {
                 Authorization: `Bearer ${token}`,
               },
+              //withCredentials: true,
             }
           );
-          //console.log(request.data);
           setUser(request.data);
         } catch (error) {
           console.log(error);
         }
       };
       getMe();
-    } else {
-      console.log("vous devez vous reconnecter");
-      //redirect("/");
     }
   }, [token]);
 
   const role = user?.role.type || "";
-  const isAdmin = role === "SUPER_ADMIN" || role === "administrator";
+  //const isAdmin = role === "SUPER_ADMIN" || role === "administrator";
 
   return {
     user,
