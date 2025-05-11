@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_array_participants",
+  "info": {
+    "displayName": "participant"
+  },
+  "options": {},
+  "attributes": {
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    }
+  }
+}

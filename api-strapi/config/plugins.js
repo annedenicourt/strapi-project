@@ -12,4 +12,11 @@ module.exports = {
       },
     },
   },
+  "users-permissions": {
+    config: {
+      jwt: {
+        expiresIn: "7d", // ou '1h', '4h', etc.
+      },
+    },
+  },
 };
