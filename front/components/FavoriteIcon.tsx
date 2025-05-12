@@ -1,29 +1,29 @@
-import { FaHeart, FaRegHeart, FaRegStar, FaStar } from "react-icons/fa";
-import { useEffect, useState } from "react";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import { Plant } from "../utils/types";
+import { useProfile } from "../utils/useProfile";
 
 interface FavoritesProps {
-  plant: Plant | undefined;
+  plant: Plant;
   handleFavorites: (plant: Plant) => void;
-  favorites: Plant[];
 }
 
-export const FavoriteIcon: React.FC<FavoritesProps> = ({
-  plant,
-  handleFavorites,
-  favorites,
-}) => {
-  return (
-    <button onClick={() => plant && handleFavorites(plant)}>
-      {plant && favorites.find((item: Plant) => item.id === plant.id) ? (
-        <div title={"Retirer des favoris"}>
-          <FaHeart color={"orange"} size={22} />
-        </div>
-      ) : (
-        <div title={"Ajouter aux favoris"}>
-          <FaRegHeart color={"orange"} size={16} />
-        </div>
-      )}
-    </button>
+export function FavoriteIcon({ plant, handleFavorites }: FavoritesProps) {
+  const { user } = useProfile();
+  
+  const isInFavorites = plant.attributes.favorite_users?.data?.some(
+    (favorite_user) => favorite_user.id === user?.id?.toString()
   );
-};
+
+  return (
+    <div
+      className="cursor-pointer"
+      onClick={() => handleFavorites(plant)}
+    >
+      {isInFavorites ? (
+        <FaHeart size={24} color="red" />
+      ) : (
+        <FaRegHeart size={24} color="red" />
+      )}
+    </div>
+  );
+}

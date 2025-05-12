@@ -6,9 +6,8 @@ import { useEffect, useState } from "react";
 import { useProfile } from "../utils/useProfile";
 import { useMutation, useQuery } from "@apollo/client";
 import {
+  GET_ALL_PLANTS,
   GET_PLANT,
-  GET_PLANTS,
-  GET_PLANTS_BY_FILTER,
   UPDATE_PLANT,
 } from "../graphql/plants.graphql";
 import { useForm } from "react-hook-form";
@@ -162,7 +161,7 @@ export default function UpdateForm({
       },
       refetchQueries: [
         {
-          query: GET_PLANTS_BY_FILTER,
+          query: GET_ALL_PLANTS,
           variables: mode !== "" ? { visibility: mode } : {},
         },
       ],
@@ -229,8 +228,8 @@ export default function UpdateForm({
                 ))}
               </div>
             ) : (
-              plant?.attributes?.images &&
-              plant?.attributes?.images?.data.length > 0 && (
+              plant?.attributes?.images?.data &&
+              plant?.attributes?.images?.data?.length > 0 && (
                 <img
                   src={`http://localhost:1337${plant?.attributes?.images?.data[0]?.attributes?.url}`}
                   alt=""

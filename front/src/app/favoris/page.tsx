@@ -6,52 +6,39 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useProfile } from "../../../utils/useProfile";
-import { useMutation, useQuery } from "@apollo/client";
-import {
-  CREATE_PLANT,
-  GET_PLANTS,
-  GET_PLANTS_BY_FILTER,
-} from "../../../graphql/plants.graphql";
+import { useQuery } from "@apollo/client";
 import { FiPlusCircle } from "react-icons/fi";
 import { CustomModal } from "../../../components/CustomModal";
-import Filters from "../../../components/Filters";
-import { useForm } from "react-hook-form";
-import { toast } from "react-toastify";
-import { FaHeart, FaPen, FaRegHeart, FaTrashAlt } from "react-icons/fa";
+import { FaPen, FaTrashAlt } from "react-icons/fa";
 import CreationForm from "../../../components/CreationForm";
 import UpdateForm from "../../../components/UpdateForm";
 import { Plant } from "../../../utils/types";
 import { FavoriteIcon } from "../../../components/FavoriteIcon";
 import { useRouter } from "next/navigation";
+import { GET_MY_FAVORITE_PLANTS } from "../../../graphql/plants.graphql";
+
 
 export default function Favoris() {
   const { user, role } = useProfile();
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [plantToUpdate, setPlantToUpdate] = useState<number>();
-
-  const storage = JSON.parse(localStorage.getItem("favorites") || "[]");
-  const [favorites, setFavorites] = useState<Plant[]>(() => storage);
   const router = useRouter();
 
-  useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
-
-  const handleFavorites = (plant: Plant) => {
-    const isInFavorites = favorites.find((item: Plant) => item.id === plant.id);
-    console.log("isInFavorites", isInFavorites);
-    if (isInFavorites === undefined) {
-      const newFavorites = [...favorites, plant];
-      setFavorites(newFavorites);
-    } else {
-      const newFavorites = favorites.filter(
-        (item: Plant) => item.id !== plant.id
-      );
-      setFavorites(newFavorites);
+  const {
+    loading,
+    data: getPlantsData,
+    error,
+    refetch,
+  } = useQuery( GET_MY_FAVORITE_PLANTS, {
+    variables: { 
+      userId: user?.id?.toString()
     }
-  };
+  });
+  const favoritePlants = getPlantsData?.plants?.data;
 
-  console.log("favorites", favorites);
+  const handleFavorites = async (plant: Plant) => {
+    console.log("plant", plant);
+  };
 
   return (
     <div className="">
@@ -62,8 +49,8 @@ export default function Favoris() {
         Retour
       </button>
       <div className="flex flex-wrap">
-        {favorites?.length > 0 ? (
-          favorites?.map((plant: Plant) => {
+        {favoritePlants?.length > 0 ? (
+          favoritePlants?.map((plant: Plant) => {
             return (
               <div
                 key={plant.id}
@@ -85,7 +72,7 @@ export default function Favoris() {
                   <div className="mt-1 flex flex-row items-center justify-center text-center uppercase">
                     <div>{plant.attributes.name}</div>
                     {user?.id.toString() ===
-                      plant?.attributes?.users_permissions_user?.data?.id && (
+                      plant?.attributes?.owner?.data?.id && (
                       <div className="flex flex-row items-center justify-center">
                         <div
                           className="mx-3"
@@ -104,7 +91,7 @@ export default function Favoris() {
                     <FavoriteIcon
                       plant={plant}
                       handleFavorites={handleFavorites}
-                      favorites={favorites}
+                      //favorites={favorites}
                     />
                   </div>
                 </div>
@@ -131,7 +118,7 @@ export default function Favoris() {
           isOpen={isOpenCreate}
           onClose={() => setIsOpenCreate(false)}
         >
-          <CreationForm />
+          <CreationForm close={() => setIsOpenCreate(false) } />
         </CustomModal>
       )}
       {plantToUpdate && (

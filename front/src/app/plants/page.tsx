@@ -9,8 +9,12 @@ import { useProfile } from "../../../utils/useProfile";
 import { useMutation, useQuery } from "@apollo/client";
 import {
   CREATE_PLANT,
-  GET_PLANTS,
-  GET_PLANTS_BY_FILTER,
+  DELETE_PLANT,
+  GET_MY_PLANTS,
+  GET_ALL_PLANTS,
+  ADD_TO_FAVORITES,
+  REMOVE_FROM_FAVORITES,
+  GET_MY_FAVORITE_PLANTS,
 } from "../../../graphql/plants.graphql";
 import { FiPlusCircle } from "react-icons/fi";
 import { CustomModal } from "../../../components/CustomModal";
@@ -28,90 +32,123 @@ export default function Plants() {
   const [mode, setMode] = useState("");
   const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [plantToUpdate, setPlantToUpdate] = useState<number>();
-  const [confirmDelete, setConfirmDelete] = useState<number>();
-  //const storage = JSON.parse(localStorage.getItem("favorites") || "[]");
-  //const [favorites, setFavorites] = useState<Plant[]>(() => storage);
-  const [favorites, setFavorites] = useState<Plant[]>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        return JSON.parse(localStorage.getItem("favorites") || "[]");
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  /* const {
-    loading,
-    data: getPlantsData,
-    error,
-  } = useQuery(mode === "" ? GET_PLANTS : GET_PLANTS_BY_FILTER, {
-    variables: mode === "" ? {} : { visibility: mode },
-    fetchPolicy: "network-only", // Optionnel: force à refaire la requête au réseau
-  }); */
+  const [plantToDelete, setPlantToDelete] = useState<number>();
 
   const {
     loading,
     data: getPlantsData,
     error,
     refetch,
-  } = useQuery(GET_PLANTS_BY_FILTER, {
-    variables: mode !== "" ? { visibility: mode } : {},
+  } = useQuery(mode === "owner" ? GET_MY_PLANTS : mode === "favorites" ? GET_MY_FAVORITE_PLANTS : GET_ALL_PLANTS, {
+    variables: { 
+      userId: user?.id?.toString()
+    }
   });
   const plants = getPlantsData?.plants?.data;
 
-  const [deletePlantMutation] = useMutation(CREATE_PLANT, {
+  const [addToFavorites] = useMutation(ADD_TO_FAVORITES, {
+    onCompleted: () => {
+      toast.success("Plante ajoutée aux favoris !");
+      refetch();
+    },
+    onError: (error) => {
+      console.error("Add to favorites error:", error.message);
+      toast.error("Erreur lors de l'ajout aux favoris");
+    },
+  });
+
+  const [removeFromFavorites] = useMutation(REMOVE_FROM_FAVORITES, {
+    onCompleted: () => {
+      toast.success("Plante retirée des favoris !");
+      refetch();
+    },
+    onError: (error) => {
+      console.error("Remove from favorites error:", error.message);
+      toast.error("Erreur lors du retrait des favoris");
+    },
+  });
+
+  const handleFavorites = async (plant: Plant) => {
+    if (!user) {
+      toast.error("Vous devez être connecté pour gérer vos favoris");
+      return;
+    }
+
+    const currentFavoriteUsers = plant.attributes.favorite_users?.data || [];
+    const isInFavorites = currentFavoriteUsers.some(
+      (favorite_user) => favorite_user.id === user.id.toString()
+    );
+
+    try {
+      if (!isInFavorites) {
+        const newFavoriteUsers = currentFavoriteUsers.map(user => user.id);
+        newFavoriteUsers.push(user.id.toString());
+        
+        await addToFavorites({
+          variables: {
+            id: plant.id.toString(),
+            input: {
+              favorite_users: newFavoriteUsers
+            }
+          },
+        });
+      } else {
+        const newFavoriteUsers = currentFavoriteUsers
+          .filter(user => user.id !== user.id.toString())
+          .map(user => user.id);
+          
+        await removeFromFavorites({
+          variables: {
+            id: plant.id.toString(),
+            input: {
+              favorite_users: newFavoriteUsers
+            }
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Favorites error:", error);
+      toast.error("Une erreur est survenue lors de la gestion des favoris");
+    }
+  };
+
+  const [deletePlantMutation] = useMutation(DELETE_PLANT, {
     onCompleted: (data) => {
       toast.success("Suppression de plante réussie !");
-      setConfirmDelete(undefined);
+      setPlantToDelete(undefined);
     },
     onError: (error) => {
       console.error("Delete error:", error.message);
       toast.error(
-        "Nous n'avons pas pu supprmier votre plante, veuillez réessayer"
+        "Nous n'avons pas pu supprimer votre plante, veuillez réessayer"
       );
     },
   });
 
   useEffect(() => {
-    refetch(mode === "" ? {} : { visibility: mode });
-  }, [mode, refetch]);
-
-  useEffect(() => {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  }, [favorites]);
-
-  const handleFavorites = (plant: Plant) => {
-    const isInFavorites = favorites.find((item: Plant) => item.id === plant.id);
-    if (isInFavorites === undefined) {
-      const newFavorites = [...favorites, plant];
-      setFavorites(newFavorites);
-    } else {
-      const newFavorites = favorites.filter(
-        (item: Plant) => item.id !== plant.id
-      );
-      setFavorites(newFavorites);
-    }
-  };
+    refetch({ 
+      userId: user?.id?.toString()
+    });
+  }, [mode, refetch, user]);
 
   const handleDelete = async (plantId: number) => {
-    console.log("Supprimer", plantId);
-    /* await deletePlantMutation({
+    await deletePlantMutation({
       variables: {
-        input: {
-          id: plantId,
-          
-        },
+        id: plantId
       },
       refetchQueries: [
         {
-          query: GET_PLANTS,
+          query: GET_MY_PLANTS,
+          variables: mode === "owner" ? { userId: user?.id?.toString() } : {},
+        },
+        {
+          query: GET_ALL_PLANTS,
+          variables: mode === "owner" ? { userId: user?.id?.toString() } : {},
         },
       ],
-    }); */
+    });
   };
-  console.log("mode", mode);
+
   return (
     <div className="">
       <div className={`${gruppo} w-full my-6 text-center text-5xl`}>
@@ -146,7 +183,7 @@ export default function Plants() {
                   <div className="h-12 mt-1 flex flex-row items-center justify-center text-center uppercase">
                     <div>{plant.attributes.name}</div>
                     {user?.id.toString() ===
-                      plant?.attributes?.users_permissions_user?.data?.id && (
+                      plant?.attributes?.owner?.data?.id && (
                       <div className="flex flex-row items-center justify-center">
                         <div
                           className="mx-3 cursor-pointer"
@@ -158,7 +195,7 @@ export default function Plants() {
                         <div
                           className="cursor-pointer"
                           title="Supprimer"
-                          onClick={() => setConfirmDelete(plant?.id)}
+                          onClick={() => setPlantToDelete(plant?.id)}
                         >
                           <FaTrashAlt />
                         </div>
@@ -169,7 +206,6 @@ export default function Plants() {
                     <FavoriteIcon
                       plant={plant}
                       handleFavorites={handleFavorites}
-                      favorites={favorites}
                     />
                   </div>
                 </div>
@@ -196,7 +232,7 @@ export default function Plants() {
           isOpen={isOpenCreate}
           onClose={() => setIsOpenCreate(false)}
         >
-          <CreationForm />
+          <CreationForm close={() => setIsOpenCreate(false)}/>
         </CustomModal>
       )}
       {plantToUpdate && (
@@ -211,16 +247,16 @@ export default function Plants() {
           />
         </CustomModal>
       )}
-      {confirmDelete && (
+      {plantToDelete && (
         <CustomModal
-          isOpen={confirmDelete !== undefined}
-          onClose={() => setConfirmDelete(undefined)}
+          isOpen={plantToDelete !== undefined}
+          onClose={() => setPlantToDelete(undefined)}
         >
           <div>
             <div>Voulez-vous vraiment supprimer cette plante ?</div>
             <div className="flex flex-row">
-              <div onClick={() => setConfirmDelete(undefined)}>Annuler</div>
-              <div onClick={() => handleDelete(confirmDelete)}>Confirmer</div>
+              <div onClick={() => setPlantToDelete(undefined)}>Annuler</div>
+              <div onClick={() => handleDelete(plantToDelete)}>Confirmer</div>
             </div>
           </div>
         </CustomModal>

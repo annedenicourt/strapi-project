@@ -20,23 +20,23 @@ export default function Filters({ setMode, mode }: FiltersProps) {
         >
           Toutes les plantes
         </div>
-        <div
-          className={`w-56 mx-3 ${
-            mode === "public" && "bg-red-300"
-          } text-center rounded cursor-pointer`}
-          onClick={() => setMode && setMode("public")}
-        >
-          {" "}
-          Plantes de la communauté
-        </div>
+       
         <div
           className={`w-32 mx-3 ${
-            mode === "private" && "bg-red-300"
+            mode === "owner" && "bg-red-300"
           } text-center rounded cursor-pointer`}
-          onClick={() => setMode && setMode("private")}
+          onClick={() => setMode && setMode("owner")}
         >
           Mes plantes
         </div>
+          <div
+          className={`w-32 mx-3 ${
+            mode === "favorites" && "bg-red-300"
+          } text-center rounded cursor-pointer`}
+          onClick={() => setMode && setMode("favorites")}
+        >
+          Mes favoris
+        </div> 
       </div>
     </div>
   );

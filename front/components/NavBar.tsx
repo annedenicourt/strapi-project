@@ -34,14 +34,14 @@ export const NavBar: React.FC<NavBarProps> = ({ role = null }) => {
       >
         Catalogue
       </Link>
-      <Link
+      {/* <Link
         className={`mx-3 ${
           pathname === "/favoris" ? "font-bold underline" : ""
         }`}
         href="/favoris"
       >
         Mes favoris
-      </Link>
+      </Link> */}
       {role === "administrator" && (
         <Link
           className={`mx-3 ${

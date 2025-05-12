@@ -7,15 +7,18 @@ import { useProfile } from "../utils/useProfile";
 import { useMutation, useQuery } from "@apollo/client";
 import {
   CREATE_PLANT,
-  GET_PLANTS,
-  GET_PLANTS_BY_FILTER,
+  GET_ALL_PLANTS,
 } from "../graphql/plants.graphql";
 import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 
-export default function CreationForm() {
+interface UpdateFormProps {
+  close: () => void;
+}
+
+export default function CreationForm({ close }: UpdateFormProps) {
   const { user, role } = useProfile();
-  const [isOpenCreate, setIsOpenCreate] = useState(false);
+  //const [isOpenCreate, setIsOpenCreate] = useState(false);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const {
     register,
@@ -52,7 +55,7 @@ export default function CreationForm() {
   const [createPlantMutation] = useMutation(CREATE_PLANT, {
     onCompleted: (data) => {
       toast.success("Création de plante réussie !");
-      setIsOpenCreate(false);
+      close();
       reset();
     },
     onError: (error) => {
@@ -111,13 +114,14 @@ export default function CreationForm() {
           plantationDate: values.plantationDate,
           publishedAt: new Date().toISOString(),
           images: uploadedImageIds,
-          users_permissions_user: user ? user.id : undefined,
+          //users_permissions_user: user ? user.id : undefined,
+          owner: user ? user.id : undefined,
           visibility: isPrivate ? "private" : "public",
         },
       },
       refetchQueries: [
         {
-          query: GET_PLANTS,
+          query: GET_ALL_PLANTS,
         },
       ],
     });
