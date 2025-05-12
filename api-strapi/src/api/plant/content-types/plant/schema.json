@@ -36,7 +36,13 @@
     "plantationDate": {
       "type": "date"
     },
-    "users_permissions_user": {
+    "favorite_users": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "favorites"
+    },
+    "owner": {
       "type": "relation",
       "relation": "oneToOne",
       "target": "plugin::users-permissions.user"
